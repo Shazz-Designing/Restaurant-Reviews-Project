@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy import DateTime
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -25,8 +27,7 @@ class Customer(Base):
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
-    reviews = relationship('Review', back_populates='customer')
-    restaurants = relationship('Restaurant', secondary='reviews', back_populates='customers')
+    reviews = relationship('Review', back_populates='customer', cascade="all, delete-orphan")
 
     def full_name(self):
         # Full name of the customer, with first name and last name concatenated
@@ -54,6 +55,9 @@ class Review(Base):
     __tablename__ = 'reviews'
     id = Column(Integer, primary_key=True)
     star_rating = Column(Integer)
+    review_text = Column(String) 
+    timestamp = Column(DateTime, default=datetime.utcnow) 
+
     restaurant_id = Column(Integer, ForeignKey('restaurants.id'))
     customer_id = Column(Integer, ForeignKey('customers.id'))
     restaurant = relationship('Restaurant', back_populates='reviews')
