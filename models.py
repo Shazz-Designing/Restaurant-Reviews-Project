@@ -18,9 +18,13 @@ class Restaurant(Base):
         # Restaurant instance with the highest price
         return session.query(cls).order_by(cls.price.desc()).first()
 
-    def reviews(self):
-        # Collection of all the reviews for the restaurant
+    def all_reviews(self):
+        # List of strings with all the reviews for this restaurant
         return [review.full_review() for review in self.reviews]
+
+    def customers(self):
+        # Collection of all the customers who reviewed the restaurant
+        return [customer.full_name() for customer in self.customers]
 
 class Customer(Base):
     __tablename__ = 'customers'
@@ -28,13 +32,14 @@ class Customer(Base):
     first_name = Column(String)
     last_name = Column(String)
     reviews = relationship('Review', back_populates='customer', cascade="all, delete-orphan")
+    restaurants = relationship('Restaurant', secondary='reviews', back_populates='customers')
 
     def full_name(self):
         # Full name of the customer, with first name and last name concatenated
         return f"{self.first_name} {self.last_name}"
 
     def favorite_restaurant(self):
-        # Restaurant instance with the highest star rating from this customer
+        # Restaurant instance that has the highest star rating from this customer
         highest_rated_review = max(self.reviews, key=lambda review: review.star_rating, default=None)
         return highest_rated_review.restaurant if highest_rated_review else None
 
@@ -51,6 +56,14 @@ class Customer(Base):
             session.delete(review)
         session.commit()
 
+    def reviews(self):
+        # Collection of all the reviews that the customer has left
+        return [review.full_review() for review in self.reviews]
+
+    def restaurants(self):
+        # Collection of all the restaurants that the customer has reviewed
+        return [restaurant.name for restaurant in self.restaurants]
+
 class Review(Base):
     __tablename__ = 'reviews'
     id = Column(Integer, primary_key=True)
@@ -64,7 +77,7 @@ class Review(Base):
     customer = relationship('Customer', back_populates='reviews')
 
     def full_review(self):
-        # String formatted as specified in the deliverables
+        
         return f"Review for {self.restaurant.name} by {self.customer.full_name()}: {self.star_rating} stars."
 
 # Create an SQLite database engine

@@ -11,8 +11,8 @@ session = DBSession()
 restaurant1 = Restaurant(name='Java', price=3)
 restaurant2 = Restaurant(name='Art Cafe', price=2)
 
-customer1 = Customer(first_name='John', last_name='Doe')
-customer2 = Customer(first_name='Jane', last_name='Doe')
+customer1 = Customer(first_name='Shazz', last_name='Adot')
+customer2 = Customer(first_name='Jane', last_name='Juma')
 
 review1 = Review(star_rating=4, restaurant=restaurant1, customer=customer1)
 review2 = Review(star_rating=5, restaurant=restaurant2, customer=customer2)
