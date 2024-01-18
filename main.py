@@ -10,7 +10,6 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-# Example queries using the deliverable methods
 
 # Review class methods
 review = session.query(Review).first()
@@ -24,9 +23,14 @@ print(f"Review restaurant: {restaurant_instance}")
 restaurant = session.query(Restaurant).first()
 reviews_collection = restaurant.reviews() if restaurant else None
 customers_collection = restaurant.customers() if restaurant else None
+review = session.query(Review).first()
+print(f"Review for {review.restaurant.name} by {review.customer.full_name()}: {review.star_rating} stars.")
 
-print(f"Restaurant reviews: {reviews_collection}")
-print(f"Restaurant customers: {customers_collection}")
+restaurant = session.query(Restaurant).filter_by(name='Hilton').first()
+if restaurant:
+    print(restaurant.all_reviews())
+else:
+    print("Restaurant not found.")
 
 # Customer class methods
 customer = session.query(Customer).first()

@@ -31,50 +31,35 @@ class Customer(Base):
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
-    reviews = relationship('Review', back_populates='customer', cascade="all, delete-orphan")
-    restaurants = relationship('Restaurant', secondary='reviews', back_populates='customers')
+    customer_reviews = relationship('Review', back_populates='customer', cascade="all, delete-orphan")
 
     def full_name(self):
-        # Full name of the customer, with first name and last name concatenated
         return f"{self.first_name} {self.last_name}"
 
     def favorite_restaurant(self):
-        # Restaurant instance that has the highest star rating from this customer
-        highest_rated_review = max(self.reviews, key=lambda review: review.star_rating, default=None)
+        highest_rated_review = max(self.customer_reviews, key=lambda review: review.star_rating, default=None)
         return highest_rated_review.restaurant if highest_rated_review else None
 
     def add_review(self, restaurant, rating):
-        # New review for the restaurant with the given restaurant_id
         new_review = Review(customer=self, restaurant=restaurant, star_rating=rating)
         session.add(new_review)
         session.commit()
 
     def delete_reviews(self, restaurant):
-        # Remove all reviews for this restaurant
         reviews_to_delete = session.query(Review).filter_by(customer=self, restaurant=restaurant).all()
         for review in reviews_to_delete:
             session.delete(review)
         session.commit()
 
-    def reviews(self):
-        # Collection of all the reviews that the customer has left
-        return [review.full_review() for review in self.reviews]
-
-    def restaurants(self):
-        # Collection of all the restaurants that the customer has reviewed
-        return [restaurant.name for restaurant in self.restaurants]
 
 class Review(Base):
     __tablename__ = 'reviews'
     id = Column(Integer, primary_key=True)
     star_rating = Column(Integer)
-    review_text = Column(String) 
-    timestamp = Column(DateTime, default=datetime.utcnow) 
-
     restaurant_id = Column(Integer, ForeignKey('restaurants.id'))
     customer_id = Column(Integer, ForeignKey('customers.id'))
-    restaurant = relationship('Restaurant', back_populates='reviews')
-    customer = relationship('Customer', back_populates='reviews')
+    restaurant = relationship('Restaurant', back_populates='restaurant_reviews')
+    customer = relationship('Customer', back_populates='customer_reviews')
 
     def full_review(self):
         
