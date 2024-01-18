@@ -1,67 +1,40 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.exc import SQLAlchemyError
 
 Base = declarative_base()
 
-class Restaurant(Base):
-    __tablename__ = 'restaurants'
+class Review(Base):
+    __tablename__ = 'reviews'
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    price = Column(Integer)
-    reviews = relationship('Review', back_populates='restaurant')
-    customers = relationship('Customer', secondary='reviews', back_populates='restaurants')
+    comment = Column(String)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=False)
+    restaurant_id = Column(Integer, ForeignKey('restaurants.id'), nullable=False)
 
-    @classmethod
-    def fanciest(cls):
-        # Restaurant instance with the highest price
-        return session.query(cls).order_by(cls.price.desc()).first()
-
-    def all_reviews(self):
-        # List of strings with all the reviews for this restaurant
-        return [review.full_review(self) for review in self.reviews]
-
-    def get_customers(self):
-        # Collection of all the customers who reviewed the restaurant
-        return [customer.full_name() for customer in self.customers]
+    # Define the relationships
+    customer = relationship('Customer', back_populates='customer_reviews', overlaps="reviews_customers")
+    restaurant = relationship('Restaurant', back_populates='reviews', overlaps="reviews_restaurants")
 
 class Customer(Base):
     __tablename__ = 'customers'
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
-    reviews = relationship('Review', back_populates='customer', cascade="all, delete-orphan")
+    name = Column(String, nullable=False)
 
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+    # Define the relationships
+    restaurants = relationship('Restaurant', secondary='reviews', back_populates='customers', overlaps="restaurants_customers")
+    customer_reviews = relationship('Review', back_populates='customer', overlaps="reviews_customers")
 
-    def favorite_restaurant(self):
-        highest_rated_review = max(self.reviews, key=lambda review: review.star_rating, default=None)
-        return highest_rated_review.restaurant if highest_rated_review else None
-
-    def add_review(self, restaurant, rating):
-        new_review = Review(customer=self, restaurant=restaurant, star_rating=rating)
-        session.add(new_review)
-        session.commit()
-
-    def delete_reviews(self, restaurant):
-        reviews_to_delete = session.query(Review).filter_by(customer=self, restaurant=restaurant).all()
-        for review in reviews_to_delete:
-            session.delete(review)
-        session.commit()
-
-class Review(Base):
-    __tablename__ = 'reviews'
+class Restaurant(Base):
+    __tablename__ = 'restaurants'
     id = Column(Integer, primary_key=True)
-    star_rating = Column(Integer)
-    
-    restaurant_id = Column(Integer, ForeignKey('restaurants.id'))
-    restaurant = relationship('Restaurant', back_populates='reviews')
+    name = Column(String, nullable=False)
+    price = Column(Integer)
 
-    customer_id = Column(Integer, ForeignKey('customers.id'))
-    customer = relationship('Customer', back_populates='reviews')
-
-    def full_review(self, restaurant):
-        return f"Review for {restaurant.name} by {self.customer.full_name()}: {self.star_rating} stars."
+    # Define the relationships
+    customers = relationship('Customer', secondary='reviews', back_populates='restaurants', overlaps="customers_restaurants")
+    reviews = relationship('Review', back_populates='restaurant', overlaps="reviews_restaurants")
 
 # Create an SQLite database engine
 engine = create_engine('sqlite:///restaurant_reviews.db')
